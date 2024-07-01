@@ -1,9 +1,11 @@
 #include <stdio.h>
+
 #define eprintf(format, ...) fprintf(stderr, format, ##__VA_ARGS__)
 
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+
 char *read_file(const char *filename) {
 	FILE *fp;
 	char *result;
@@ -33,7 +35,10 @@ error:
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-GLuint create_shader_program(const char* vertex_src, const char* fragment_src) {
+
+GLuint shader_program;
+
+void init_shader_program(const char* vertex_src, const char* fragment_src) {
 	GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertex_shader, 1, &vertex_src, NULL);
 	glCompileShader(vertex_shader);
@@ -55,7 +60,7 @@ GLuint create_shader_program(const char* vertex_src, const char* fragment_src) {
 		eprintf("Error: Fragment shader compilation failed: %s\n", infoLog);
 	}
 
-	GLuint shader_program = glCreateProgram();
+	shader_program = glCreateProgram();
 	glAttachShader(shader_program, vertex_shader);
 	glAttachShader(shader_program, fragment_shader);
 	glLinkProgram(shader_program);
@@ -67,8 +72,16 @@ GLuint create_shader_program(const char* vertex_src, const char* fragment_src) {
 
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
+}
 
-	return shader_program;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+
+	float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+	GLint aspect_ratio_loc = glGetUniformLocation(shader_program, "aspect_ratio");
+
+	glUseProgram(shader_program);
+	glUniform1f(aspect_ratio_loc, aspect_ratio);
 }
 
 int main() {
@@ -80,7 +93,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+	// glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 	GLFWwindow* window = glfwCreateWindow(800, 600, "LED Cube", NULL, NULL);
 	if (!window) {
@@ -121,14 +134,16 @@ int main() {
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
-	GLuint shaderProgram = create_shader_program(read_file("shader.vert"), read_file("shader.frag"));
+	init_shader_program(read_file("shader.vert"), read_file("shader.frag"));
+
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shaderProgram);
+		glUseProgram(shader_program);
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

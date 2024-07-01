@@ -2,10 +2,12 @@
 
 layout (location = 0) in vec3 in_position;
 
-out vec3 ray_direction;
+uniform float aspect_ratio;
+
+out vec2 uv;
 
 void main()
 {
-	ray_direction = normalize(vec3(in_position.xy, 1.0));
+	uv = in_position.xy * vec2(aspect_ratio, 1.0); // coordinates with unit height
 	gl_Position = vec4(in_position, 1.0);
 }
