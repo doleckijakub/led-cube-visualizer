@@ -1,6 +1,6 @@
 #version 330 core
 
-#define EPSILON 0.1
+#define EPSILON 0.001
 #define BACKGROUND vec3(0.1)
 
 in vec2 uv;
@@ -20,9 +20,12 @@ float sdf_sphere(vec3 p, vec3 c, float r)
 	return length(p - c) - r;
 }
 
-vec3 kirby_body_center = vec3(0, 0, 5);
+vec3  kirby_body_center = vec3(0, 0, 5);
 float kirby_body_radius = 1.4;
-vec3 kirby_body_color = rgb3(255, 170, 210);
+vec3  kirby_body_color = rgb3(255, 170, 210);
+vec3  kirby_blush_relative_position = vec3(0.45, 0.06, -0.8);
+float kirby_blush_radius = 0.55;
+vec3  kirby_blush_color = rgb3(228, 78, 145);
 
 vec4 kirby(vec3 p)
 {
@@ -30,7 +33,14 @@ vec4 kirby(vec3 p)
 	
 	{
 		float sdf_body = sdf_sphere(p, kirby_body_center, kirby_body_radius);
-		if (sdf_body < result.w) result = vec4(kirby_body_color, sdf_body);
+		if (sdf_body < result.w)
+		{
+			vec3 color = kirby_body_color;
+			vec3 blush_center = kirby_body_center + kirby_blush_relative_position;
+			vec3 p2 = vec3(abs(p.x), 2 * p.y, p.z);
+			if (sdf_sphere(p2, blush_center, kirby_blush_radius) < 0) color = kirby_blush_color;
+			result = vec4(color, sdf_body);
+		}
 	}
 
 	return result;
