@@ -5,6 +5,7 @@
 
 in vec2 uv;
 
+const vec3 light_position = vec3(10, 10, -10);
 uniform vec3 camera_position;
 
 out vec4 frag_color;
@@ -62,6 +63,15 @@ vec4 kirby(vec3 p)
 	return result;
 }
 
+vec3 calculate_normal(vec3 p)
+{
+	vec2 e = vec2(1.0,-1.0) * 0.5773 * 0.001;
+    return normalize(e.xyy * kirby(p + e.xyy).w + 
+					 e.yyx * kirby(p + e.yyx).w + 
+					 e.yxy * kirby(p + e.yxy).w + 
+					 e.xxx * kirby(p + e.xxx).w);
+}
+
 vec4 raymarch(vec3 ro, vec3 rd)
 {
 	float t = 0.0;
@@ -74,6 +84,13 @@ vec4 raymarch(vec3 ro, vec3 rd)
 		if (d < EPSILON)
 		{
 			sdf_result.w = t;
+
+			vec3 normal = calculate_normal(p);
+			vec3 light_direction = normalize(light_position - p);
+			// vec3 light_color = vec3(1);
+			float light = clamp(dot(light_direction, normal), 0.3, 1.0);
+			sdf_result.xyz *= light;
+
 			return sdf_result;
 		}
 		
