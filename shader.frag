@@ -19,12 +19,20 @@ float sdf_sphere(vec3 p, vec3 c, float r)
 	return length(p - c) - r;
 }
 
+float sdf_ellipsoid(vec3 p, vec3 r)
+{
+	float k0 = length(p / r);
+	float k1 = length(p / (r * r));
+	return k0 * (k0 - 1.0) / k1;
+}
+
 vec3  kirby_body_center = vec3(0, 0, 5);
 float kirby_body_radius = 1.4;
 vec3  kirby_body_color = rgb3(255, 170, 210);
 vec3  kirby_blush_relative_position = vec3(0.45, 0.06, -0.8);
 float kirby_blush_radius = 0.55;
 vec3  kirby_blush_color = rgb3(228, 78, 145);
+vec3  kirby_feet_color = rgb3(213, 0, 66);
 
 vec4 kirby(vec3 p)
 {
@@ -39,6 +47,15 @@ vec4 kirby(vec3 p)
 			vec3 p2 = vec3(abs(p.x), 2 * p.y, p.z);
 			if (sdf_sphere(p2, blush_center, kirby_blush_radius) < 0) color = kirby_blush_color;
 			result = vec4(color, sdf_body);
+		}
+	}
+
+	{
+		vec3 p2 = vec3(abs(p.x), p.yz) + vec3(-0.7, 1.3, -5);
+		float sdf_feet = sdf_ellipsoid(p2, vec3(0.7, 0.5, 0.5));
+		if (sdf_feet < result.w)
+		{
+			result = vec4(kirby_feet_color, sdf_feet);
 		}
 	}
 
