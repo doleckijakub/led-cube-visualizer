@@ -5,8 +5,7 @@
 
 in vec2 uv;
 
-// uniform vec3 camera_position;
-vec3 camera_position = vec3(0);
+uniform vec3 camera_position;
 
 out vec4 frag_color;
 
@@ -60,10 +59,8 @@ vec4 raymarch(vec3 ro, vec3 rd)
 			sdf_result.w = t;
 			return sdf_result;
 		}
-		else
-		{
-			t += d; // perhaps not full d??
-		}
+		
+		t += d;
 	}
 
 	return vec4(-1.0);
@@ -81,8 +78,7 @@ vec3 raymarch_color(vec3 ro, vec3 rd)
 void main()
 {
 	vec3 ro = camera_position;
-	vec3 target = vec3(uv, 1.0);
-	vec3 rd = normalize(target - ro);
+	vec3 rd = normalize(vec3(uv, 1.0));
 
 	vec3 color = raymarch_color(ro, rd);
 
