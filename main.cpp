@@ -84,6 +84,14 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glUniform1f(aspect_ratio_loc, aspect_ratio);
 }
 
+static bool keys_pressed[GLFW_KEY_LAST] = { 0 };
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	keys_pressed[key] = action != GLFW_RELEASE;
+}
+
+#include <glm/glm.hpp>
+
 int main() {
 	if (!glfwInit()) {
 		eprintf("Failed to initialize GLFW\n");
@@ -101,6 +109,8 @@ int main() {
 		glfwTerminate();
 		return 1;
 	}
+
+	glfwSetKeyCallback(window, key_callback);
 
 	glfwMakeContextCurrent(window);
 
@@ -138,8 +148,32 @@ int main() {
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+	double previous_time = glfwGetTime();
+	double current_time;
+	double delta_time;
+
+	float camera_speed = 1;
+	glm::vec3 camera_position = { 0, 0, 0 };
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+
+		current_time = glfwGetTime();
+		delta_time = current_time - previous_time;
+		previous_time = current_time;
+
+		bool camera_moved = false;
+		if (keys_pressed[GLFW_KEY_W]) { camera_position.z += camera_speed * delta_time; camera_moved = true; }
+		if (keys_pressed[GLFW_KEY_S]) { camera_position.z -= camera_speed * delta_time; camera_moved = true; }
+		if (keys_pressed[GLFW_KEY_A]) { camera_position.x -= camera_speed * delta_time; camera_moved = true; }
+		if (keys_pressed[GLFW_KEY_D]) { camera_position.x += camera_speed * delta_time; camera_moved = true; }
+		if (camera_moved) {
+			GLuint camera_position_loc = glGetUniformLocation(shader_program, "camera_position");
+			glUseProgram(shader_program);
+			glUniform3fv(camera_position_loc, 1, &camera_position.x);
+
+			printf("x = %f, z = %f\n", camera_position.x, camera_position.z);
+		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
