@@ -55,10 +55,26 @@ vec4 kirby(vec3 p)
 	{
 		vec3 p2 = vec3(abs(p.x), p.yz) + vec3(-0.7, 1.3, -5);
 		float sdf_feet = sdf_ellipsoid(p2, vec3(0.7, 0.5, 0.5));
-		if (sdf_feet < result.w)
-		{
-			result = vec4(kirby_feet_color, sdf_feet);
-		}
+		if (sdf_feet < result.w) result = vec4(kirby_feet_color, sdf_feet);
+	}
+
+	{
+		vec3 p2 = vec3(-abs(p.x), p.y, p.z);
+        vec2 kirby_eye_pos_2 = vec2(0.45, 0.35);
+        float sdf_eyes = sdf_ellipsoid(p2 + vec3(0.3,-0.5,-3.85), vec3(0.2, 0.4, 0.22));
+        if (-sdf_eyes > result.w) result = vec4(vec3(0, 0, 1) / ((p.y +0.14)) - vec3(1), -sdf_eyes);
+	}
+
+	{
+		vec3 p2 = vec3(-abs(p.x), p.y, p.z);
+        float sdf_eyes = sdf_ellipsoid(p2 + vec3(0.3,-0.65,-4), vec3(0.1, 0.2, 0.11));
+        if (sdf_eyes < result.w) result = vec4(vec3(1), sdf_eyes);
+	}
+
+	{
+		vec3 p2 = vec3(-p.x, p.y, p.z);
+        float sdf_mouth = sdf_sphere(p2, kirby_body_center + vec3(0,-0.2,-1.5), 0.3);
+        if (-sdf_mouth > result.w) result = vec4(vec3(1, 0, 0), -sdf_mouth);
 	}
 
 	return result;
@@ -85,17 +101,10 @@ vec4 raymarch(vec3 ro, vec3 rd)
 		if (d < EPSILON)
 		{
 			sdf_result.w = t;
-
-			vec3 normal = calculate_normal(p);
-			vec3 light_direction = normalize(light_position - p);
-			// vec3 light_color = vec3(1);
-			float light = clamp(dot(light_direction, normal), 0.3, 1.0);
-			sdf_result.xyz *= light;
-
 			return sdf_result;
 		}
 		
-		t += d;
+		t += d * 0.995;
 	}
 
 	return vec4(-1.0);
@@ -106,6 +115,14 @@ vec3 raymarch_color(vec3 ro, vec3 rd)
 	vec4 result = raymarch(ro, rd);
 
 	if (result.w <= 0) return BACKGROUND;
+
+	vec3 p = ro + rd * result.w;
+	vec3 normal = calculate_normal(p);
+	vec3 light_direction = normalize(light_position - p);
+	// vec3 light_color = vec3(1);
+	float light = clamp(dot(light_direction, normal), 0.3, 1.0);
+	if (raymarch(ro + rd * result.w, light_direction).w > 0) light = 0.3;
+	result.xyz *= light;
 
 	return result.xyz;
 }
