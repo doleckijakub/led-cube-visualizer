@@ -155,6 +155,9 @@ int main() {
 	float camera_speed = 1;
 	glm::vec3 camera_position = { 0, 0, 0 };
 
+	float camera_rotation_speed = 1;
+	glm::vec2 camera_rotation = { 0, 0 };
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
@@ -167,12 +170,27 @@ int main() {
 		if (keys_pressed[GLFW_KEY_S]) { camera_position.z -= camera_speed * delta_time; camera_moved = true; }
 		if (keys_pressed[GLFW_KEY_A]) { camera_position.x -= camera_speed * delta_time; camera_moved = true; }
 		if (keys_pressed[GLFW_KEY_D]) { camera_position.x += camera_speed * delta_time; camera_moved = true; }
+		if (keys_pressed[GLFW_KEY_LEFT_SHIFT]) { camera_position.y -= camera_speed * delta_time; camera_moved = true; }
+		if (keys_pressed[GLFW_KEY_SPACE]) { camera_position.y += camera_speed * delta_time; camera_moved = true; }
 		if (camera_moved) {
 			GLuint camera_position_loc = glGetUniformLocation(shader_program, "camera_position");
 			glUseProgram(shader_program);
 			glUniform3fv(camera_position_loc, 1, &camera_position.x);
 
-			printf("x = %f, z = %f\n", camera_position.x, camera_position.z);
+			printf("x = %f, y = %f, z = %f\n", camera_position.x, camera_position.y, camera_position.z);
+		}
+
+		bool camera_rotated = false;
+		if (keys_pressed[GLFW_KEY_UP])    { camera_rotation.x += camera_rotation_speed * delta_time; camera_rotated = true; }
+		if (keys_pressed[GLFW_KEY_DOWN])  { camera_rotation.x -= camera_rotation_speed * delta_time; camera_rotated = true; }
+		if (keys_pressed[GLFW_KEY_LEFT])  { camera_rotation.y += camera_rotation_speed * delta_time; camera_rotated = true; }
+		if (keys_pressed[GLFW_KEY_RIGHT]) { camera_rotation.y -= camera_rotation_speed * delta_time; camera_rotated = true; }
+		if (camera_rotated) {
+			GLuint camera_rotation_loc = glGetUniformLocation(shader_program, "camera_rotation");
+			glUseProgram(shader_program);
+			glUniform2fv(camera_rotation_loc, 1, &camera_rotation.x);
+
+			printf("pitch = %f, yaw = %f\n", camera_rotation.x, camera_rotation.y);
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);

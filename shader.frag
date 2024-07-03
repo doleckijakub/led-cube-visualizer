@@ -7,6 +7,7 @@ in vec2 uv;
 
 const vec3 light_position = vec3(10, 10, -10);
 uniform vec3 camera_position;
+uniform vec2 camera_rotation;
 
 out vec4 frag_color;
 
@@ -66,7 +67,7 @@ vec4 kirby(vec3 p)
 vec3 calculate_normal(vec3 p)
 {
 	vec2 e = vec2(1.0,-1.0) * 0.5773 * 0.001;
-    return normalize(e.xyy * kirby(p + e.xyy).w + 
+	return normalize(e.xyy * kirby(p + e.xyy).w + 
 					 e.yyx * kirby(p + e.yyx).w + 
 					 e.yxy * kirby(p + e.yxy).w + 
 					 e.xxx * kirby(p + e.xxx).w);
@@ -109,10 +110,26 @@ vec3 raymarch_color(vec3 ro, vec3 rd)
 	return result.xyz;
 }
 
+vec3 rotate(vec3 v, vec2 pitch_yaw) {
+	mat3 pitch_matrix = mat3(
+		1, 0, 0,
+		0, cos(pitch_yaw.x), -sin(pitch_yaw.x),
+		0, sin(pitch_yaw.x), cos(pitch_yaw.x)
+	);
+
+	mat3 yaw_matrix = mat3(
+		cos(pitch_yaw.y), 0, sin(pitch_yaw.y),
+		0, 1, 0,
+		-sin(pitch_yaw.y), 0, cos(pitch_yaw.y)
+	);
+
+	return yaw_matrix * (pitch_matrix * v);
+}
+
 void main()
 {
 	vec3 ro = camera_position;
-	vec3 rd = normalize(vec3(uv, 1.0));
+	vec3 rd = rotate(normalize(vec3(uv, 1.0)), camera_rotation);
 
 	vec3 color = raymarch_color(ro, rd);
 
