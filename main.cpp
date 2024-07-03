@@ -92,6 +92,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 #include <glm/glm.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 int main() {
 	if (!glfwInit()) {
 		eprintf("Failed to initialize GLFW\n");
@@ -131,7 +134,16 @@ int main() {
 		2, 3, 0,
 	};
 
-	GLuint VBO, VAO, EBO;
+	const char *cubemap_faces[] = {
+		"cubemap/right.jpeg",
+		"cubemap/left.jpeg",
+		"cubemap/top.jpeg",
+		"cubemap/bottom.jpeg",
+		"cubemap/front.jpeg",
+		"cubemap/back.jpeg"
+	};
+
+	GLuint VBO, VAO, EBO, cubemap_id;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -141,12 +153,37 @@ int main() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	
+	glGenTextures(1, &cubemap_id);
+	glActiveTexture(GL_TEXTURE0 + cubemap_id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
+	for (int i = 0; i < 6; i++) {
+		int w, h, c;
+		unsigned char *image_data = stbi_load(cubemap_faces[i], &w, &h, &c, 3);
+		assert(image_data && w == 256 && h == 256 && c == 3);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+		stbi_image_free(image_data);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	// glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
 	init_shader_program(read_file("shader.vert"), read_file("shader.frag"));
 
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	{
+		glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+		
+		GLuint cubemap_loc = glGetUniformLocation(shader_program, "cubemap");
+		printf("cubemap_loc = %i\n", cubemap_loc);
+		glUseProgram(shader_program);
+		glUniform1i(cubemap_loc, cubemap_id);
+	}
 
 	double previous_time = glfwGetTime();
 	double current_time;

@@ -1,13 +1,13 @@
 #version 330 core
 
 #define EPSILON 0.001
-#define BACKGROUND vec3(0.1)
 
 in vec2 uv;
 
 const vec3 light_position = vec3(10, 10, -10);
 uniform vec3 camera_position;
 uniform vec2 camera_rotation;
+uniform samplerCube cubemap;
 
 out vec4 frag_color;
 
@@ -107,14 +107,14 @@ vec4 raymarch(vec3 ro, vec3 rd)
 		t += d * 0.995;
 	}
 
-	return vec4(-1.0);
+	return vec4(texture(cubemap, rd).xyz, -1.0);
 }
 
 vec3 raymarch_color(vec3 ro, vec3 rd)
 {
 	vec4 result = raymarch(ro, rd);
 
-	if (result.w <= 0) return BACKGROUND;
+	if (result.w <= 0) return result.xyz;
 
 	vec3 p = ro + rd * result.w;
 	vec3 normal = calculate_normal(p);
