@@ -101,6 +101,12 @@ vec4 raymarch(vec3 ro, vec3 rd)
 		if (d < EPSILON)
 		{
 			sdf_result.w = t;
+
+			vec3 rr = reflect(rd, calculate_normal(p));
+			vec4 reflected_color = texture(cubemap, rr);
+			if (reflected_color.w <= 0) return sdf_result;
+			sdf_result.xyz = mix(sdf_result.xyz, reflected_color.xyz, 0.8);
+
 			return sdf_result;
 		}
 		
